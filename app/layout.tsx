@@ -1,0 +1,34 @@
+import type React from "react"
+import type { Metadata } from "next"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
+import { Analytics } from "@vercel/analytics/next"
+import { Suspense } from "react"
+import "./globals.css"
+import { SolanaWalletProvider } from "@/components/wallet-provider"
+import { WalletProvider } from "@/context/wallet-context"
+
+export const metadata: Metadata = {
+  title: "VeitFlare - Time-Locked Solana Wallet",
+  description: "Secure your crypto with time-locked wallets on Solana",
+  generator: "v0.app",
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <html lang="en" className="dark">
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
+        <SolanaWalletProvider>
+          <WalletProvider initialWallets={[]}>
+            {children}
+          </WalletProvider>
+        </SolanaWalletProvider>
+        <Analytics />
+      </body>
+    </html>
+  )
+}
