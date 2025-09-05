@@ -40,37 +40,20 @@ interface Wallet {
 
 export default function DashboardPage() {
   const { publicKey } = useWallet()
-  const [loading, setLoading] = useState(true)
   const [selectedLockedToken, setSelectedLockedToken] = useState<TokenType>('SOL')
   const [walletIdInput, setWalletIdInput] = useState("")
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
-  const { wallets, refreshWallets } = useWalletContext()
+  const { wallets, refreshWallets, fetchWallets, error } = useWalletContext()
 
   useEffect(() => {
     if (publicKey) {
-      const fetchWallets = async () => {
-        setLoading(true)
-        try {
-          const fetchedWallets = await getUserWallets(publicKey.toBase58())
-          refreshWallets(fetchedWallets)
-        } catch (error) {
-          console.error("Failed to fetch wallets:", error)
-          toast({
-            title: "Error",
-            description: "Could not fetch your wallets.",
-            variant: "destructive",
-          })
-        } finally {
-          setLoading(false)
-        }
-      }
       fetchWallets()
     } else {
       refreshWallets([])
-      setLoading(false)
     }
-  }, [publicKey, toast, refreshWallets])
+  }, [publicKey, refreshWallets])
 
   const lockedWallets = wallets.filter((wallet) => wallet.status === "locked")
   const unlockedWallets = wallets.filter((wallet) => wallet.status === "unlocked")
@@ -81,45 +64,17 @@ export default function DashboardPage() {
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/wallets/${walletId}?ownerPublicKey=${publicKey.toBase58()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch wallet');
-      }
-
-      const data = await response.json();
-      
-      const wallet: Wallet = {
-        id: data.wallet.id,
-        name: 'Shared Time-Locked Wallet',
-        amount: data.wallet.amount,
-        unlockDate: new Date(data.wallet.unlockTimestamp * 1000),
-        status: data.wallet.isUnlocked ? "unlocked" : "locked",
-        createdAt: new Date(),
-        totalLockDuration: 0,
-        owner: data.wallet.owner,
-        recipient: data.wallet.recipient,
-        tokenType: data.wallet.tokenType,
-        actualBalance: data.wallet.actualBalance,
-      };
-
-      // Add the new wallet to the context
-      refreshWallets([...wallets, wallet]);
+      const walletsData = await getUserWallets(publicKey.toBase58());
+      refreshWallets(walletsData);
       
       toast({
         title: "Success",
-        description: "Wallet added successfully!",
+        description: "Wallets refreshed successfully!",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch wallet",
+        description: error.message || "Failed to fetch wallets",
         variant: "destructive",
       });
     } finally {
